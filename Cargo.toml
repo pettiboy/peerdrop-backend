@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 actix-web = "4.9.0"
-chrono = "0.4.40"
+chrono = {version = "0.4.40", features = ["serde"]}
 dotenv = "0.15.0"
 
 # The core APIs, including the Serialize and Deserialize traits. Always
@@ -19,4 +19,4 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 
 # https://github.com/launchbadge/sqlx/blob/main/examples/postgres/transaction/src/main.rs
-sqlx = { version = "0.8", features = [ "runtime-tokio", "tls-native-tls", "postgres" , "derive"] }
+sqlx = { version = "0.8", features = ["postgres", "runtime-tokio", "chrono", "tls-native-tls", "derive"] }

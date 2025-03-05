@@ -5,5 +5,6 @@ use sqlx::FromRow;
 pub struct Session {
     pub id: i32,
     pub code: String,
-    pub created_at: chrono::NaiveDateTime
+    // idk why but allowing this to be null prevents the deserialize error
+    pub created_at: Option<chrono::NaiveDateTime>
 }
