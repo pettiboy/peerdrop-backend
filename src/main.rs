@@ -1,3 +1,6 @@
+pub mod config;
+pub mod models;
+
 use actix_web::{ web, App, HttpResponse, HttpServer, Responder};
 use serde::Deserialize;
 use serde_json::json;
