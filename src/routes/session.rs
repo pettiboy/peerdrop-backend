@@ -1,4 +1,4 @@
-use actix_web::{post, web, HttpResponse, Responder};
+use actix_web::{get, post, web, HttpResponse, Responder};
 use serde_json::json;
 use sqlx::PgPool;
 use crate::utils::generate_code;
@@ -15,4 +15,14 @@ async fn create_session(pool: web::Data<PgPool>) -> impl Responder {
         }))
     }
 
+}
+
+#[get("/sessions/{code}")]
+async fn get_session(pool: web::Data<PgPool>, code: web::Path<String>) -> impl Responder {
+    match session::get_session(&pool, &code).await {
+        Ok(session) => HttpResponse::Ok().json(session),
+        Err(_) => HttpResponse::NotFound().json(json!({
+            "message": "session id not found"
+        }))
+    }
 }

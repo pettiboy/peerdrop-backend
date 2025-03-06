@@ -36,6 +36,7 @@ async fn main() -> std::io::Result<()> {
         .app_data(web::Data::new(pool.clone()))
         .service(web::resource("/").route(web::post().to(index)))
         .service(routes::session::create_session)
+        .service(routes::session::get_session)
     })
     .bind(("127.0.0.1", 9081))?
     .run()
