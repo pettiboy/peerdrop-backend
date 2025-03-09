@@ -1,5 +1,8 @@
 .DS_Store
+.vscode
 
 /target
+
+virt/
 
 .env
