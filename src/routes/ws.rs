@@ -1,21 +1,26 @@
-use actix_web::{web, get, Error, HttpRequest, HttpResponse};
-use std::{sync::Arc, time::Instant};
+use actix::Addr;
+use actix_web::{get, web, Error, HttpRequest, HttpResponse};
 use actix_web_actors::ws;
+use std::time::Instant;
 
-// #[get("/ws")]
-// async fn chat_route(
-//     req: HttpRequest,
-//     stream: web::Payload,
-//     // srv: web::Data<Addr<server::ChatServer>>,
-// ) -> Result<HttpResponse, Error> {
-//     ws::start(
-//         // session::WsChatSession {
-//         //     id: 0,
-//         //     hb: Instant::now(),
-//         //     room: "main".to_owned(),
-//         //     name: None,
-//         //     addr: srv.get_ref().clone(),
-//         // },
-//         &req, stream,
-//     )
-// }
+use crate::actors::{chat_server::ChatServer, ws_chat_session::WsChatSession};
+
+#[get("/ws")]
+async fn chat_route(
+    req: HttpRequest,
+    stream: web::Payload,
+    srv: web::Data<Addr<ChatServer>>,
+) -> Result<HttpResponse, Error> {
+    println!("here");
+    ws::start(
+        WsChatSession {
+            id: 0,
+            hb: Instant::now(),
+            room: "main".to_owned(),
+            name: None,
+            addr: srv.get_ref().clone(),
+        },
+        &req,
+        stream,
+    )
+}
