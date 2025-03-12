@@ -24,3 +24,6 @@ sqlx = { version = "0.8", features = ["postgres", "runtime-tokio", "chrono", "tl
 
 # https://actix.rs/docs/actix/getting-started
 actix = "0.13"
+
+# https://github.com/actix/examples/tree/master/websockets/chat
+actix-web-actors = "4.1"
