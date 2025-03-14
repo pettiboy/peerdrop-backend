@@ -3,7 +3,10 @@ use actix_web::{get, web, Error, HttpRequest, HttpResponse};
 use actix_web_actors::ws;
 use std::time::Instant;
 
-use crate::actors::{chat_server::ChatServer, ws_chat_session::WsChatSession};
+use crate::actors::{
+    chat_server::ChatServer, session::actor::Session, session_manager::actor::SessionManager,
+    ws_chat_session::WsChatSession,
+};
 
 #[get("/ws")]
 async fn chat_route(
@@ -23,4 +26,18 @@ async fn chat_route(
         &req,
         stream,
     )
+}
+
+#[get("/simple-chat")]
+async fn simple_chat_route(
+    req: HttpRequest,
+    stream: web::Payload,
+    srv: web::Data<Addr<SessionManager>>,
+) -> Result<HttpResponse, Error> {
+    let ws_actor = Session {
+        manager: srv.get_ref().clone(),
+        code: None,
+    };
+
+    ws::start(ws_actor, &req, stream)
 }
