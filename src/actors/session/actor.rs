@@ -1,7 +1,7 @@
 use actix::prelude::*;
 use actix_web_actors::ws::{Message, ProtocolError, WebsocketContext};
 
-use crate::actors::{session_manager::{actor::SessionManager, messages::Connect}, shared::messages::SimpleMessage};
+use crate::actors::{session_manager::{actor::SessionManager, messages::{Connect, Relay}}, shared::messages::SimpleMessage};
 
 pub struct Session {
     pub manager: Addr<SessionManager>,
@@ -17,15 +17,35 @@ impl Actor for Session {
         // else     - relays existing code
         // this logic is handled inside the Connect handler
 
-        self.manager
+        // Addr<SessionManager> is actually a lightweight handle
+        //  (similar to a reference) to the actor, not the actor itself...
+        // when we call clone() on it, we're just creating another handle that 
+        //  points to the same underlying SessionManager actor
+        let manager = self.manager.to_owned();
+
+        let code = self.code.to_owned();
+
+        manager
         // the connect message send back a code
         // to this Session Actor
-        .do_send(Connect {
+        .send(Connect {
             // for `.recipient()` to work here we have to write a handler for `SimpleMessage`
             sender: ctx.address() // gets THIS actor's address (Session actor in this case)
                         .recipient(),            // creates a way for OTHER actors to send messages TO this actor
-            session_code: self.code.to_owned()
+            session_code: code
         })
+        .into_actor(self)
+        .then(|res, act, _ctx| {
+            match res {
+                Ok(code) => {
+                    act.code = Some(code);
+                }
+                _ => println!("Something is wrong"),
+            }
+            fut::ready(())
+        })
+        .wait(ctx);
+        
     }
 }
 
@@ -42,6 +62,11 @@ impl StreamHandler<Result<Message, ProtocolError>> for Session {
         match msg {
             Message::Text(text) => {
                 println!("{:?}", text);
+                self.manager.do_send(Relay{
+                    session_code: self.code.clone().unwrap_or("".to_string()),
+                    from: ctx.address().recipient(),
+                    msg: text.to_string()
+                });
             }
             Message::Binary(_) => println!("Unexpected binary"),
             Message::Close(reason) => {
