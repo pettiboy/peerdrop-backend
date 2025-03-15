@@ -7,8 +7,8 @@ use crate::actors::shared::messages::SimpleMessage;
 use super::messages::Connect;
 
 pub struct SessionManager {
-    code: Option<String>,
-    sessions: HashMap<String, (Recipient<SimpleMessage>, Recipient<SimpleMessage>)>,
+    pub code: Option<String>,
+    pub sessions: HashMap<String, (Recipient<SimpleMessage>, Recipient<SimpleMessage>)>,
 }
 
 impl Actor for SessionManager {

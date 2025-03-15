@@ -38,7 +38,7 @@ async fn main() -> std::io::Result<()> {
             .service(routes::session::create_session)
             .service(routes::session::get_session)
             .service(routes::ws::chat_route)
-            .service(routes::ws::chat_route)
+            .service(routes::ws::simple_chat_route)
     })
     .bind(("127.0.0.1", 9081))?
     .run()
