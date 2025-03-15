@@ -28,8 +28,8 @@ async fn chat_route(
     )
 }
 
-#[get("/simple-chat")]
-async fn simple_chat_route(
+#[get("/ws/chat")]
+async fn chat_create(
     req: HttpRequest,
     stream: web::Payload,
     srv: web::Data<Addr<SessionManager>>,
@@ -37,6 +37,21 @@ async fn simple_chat_route(
     let ws_actor = Session {
         manager: srv.get_ref().clone(),
         code: None,
+    };
+
+    ws::start(ws_actor, &req, stream)
+}
+
+#[get("/ws/chat/{code}")]
+async fn chat_with_code(
+    req: HttpRequest,
+    stream: web::Payload,
+    srv: web::Data<Addr<SessionManager>>,
+    code: String
+) -> Result<HttpResponse, Error> {
+    let ws_actor = Session {
+        manager: srv.get_ref().clone(),
+        code: Some(code),
     };
 
     ws::start(ws_actor, &req, stream)
