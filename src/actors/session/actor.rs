@@ -10,9 +10,26 @@ pub struct Session {
 
 impl Actor for Session {
     type Context = WebsocketContext<Self>;
+
+    fn started(&mut self, ctx: &mut Self::Context) {
+        // so when the Session actor is started - we inform the SessionManager
+        // if new   - creates a code and sends it back
+        // else     - relays existing code
+        // this logic is handled inside the Connect handler
+
+        self.manager
+        // the connect message send back a code
+        // to this Session Actor
+        .do_send(Connect {
+            // for `.recipient()` to work here we have to write a handler for `SimpleMessage`
+            sender: ctx.address() // gets THIS actor's address (Session actor in this case)
+                        .recipient(),            // creates a way for OTHER actors to send messages TO this actor
+            session_code: self.code.to_owned()
+        })
+    }
 }
 
-impl actix::StreamHandler<Result<Message, ProtocolError>> for Session {
+impl StreamHandler<Result<Message, ProtocolError>> for Session {
     fn handle(&mut self, item: Result<Message, ProtocolError>, ctx: &mut Self::Context) {
         let msg = match item {
             Err(_) => {
@@ -25,17 +42,6 @@ impl actix::StreamHandler<Result<Message, ProtocolError>> for Session {
         match msg {
             Message::Text(text) => {
                 println!("{:?}", text);
-
-                self.manager
-                    // the connect message send back a code
-                    // to this Session Actor
-                    .do_send(Connect {
-                        // for `.recipient()` to work here we have to write a handler for `SimpleMessage`
-                        sender: ctx.address() // gets THIS actor's address (Session actor in this case)
-                                    .recipient(),            // creates a way for OTHER actors to send messages TO this actor
-                        session_code: self.code.to_owned()
-                    })
-
             }
             Message::Binary(_) => println!("Unexpected binary"),
             Message::Close(reason) => {

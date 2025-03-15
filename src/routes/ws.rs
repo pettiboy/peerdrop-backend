@@ -34,12 +34,12 @@ async fn chat_create(
     stream: web::Payload,
     srv: web::Data<Addr<SessionManager>>,
 ) -> Result<HttpResponse, Error> {
-    let ws_actor = Session {
+    let session_actor = Session {
         manager: srv.get_ref().clone(),
         code: None,
     };
 
-    ws::start(ws_actor, &req, stream)
+    ws::start(session_actor, &req, stream)
 }
 
 #[get("/ws/chat/{code}")]
@@ -47,12 +47,12 @@ async fn chat_with_code(
     req: HttpRequest,
     stream: web::Payload,
     srv: web::Data<Addr<SessionManager>>,
-    code: String
+    code: web::Path<String>
 ) -> Result<HttpResponse, Error> {
-    let ws_actor = Session {
+    let session_actor = Session {
         manager: srv.get_ref().clone(),
-        code: Some(code),
+        code: Some(code.to_string()),
     };
 
-    ws::start(ws_actor, &req, stream)
+    ws::start(session_actor, &req, stream)
 }

@@ -31,8 +31,8 @@ impl Handler<Connect> for SessionManager {
         // if session code already exists 
         if msg.session_code.is_some() {
             session_code = msg.session_code.clone().unwrap();
-        
-        } 
+            println!("{:?}", msg.session_code)
+        }
         // else we create a new session
         else {
             session_code = generate_code(7);
