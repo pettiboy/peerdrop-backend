@@ -212,7 +212,9 @@ if let Some(guys) = self.sessions.get_mut(&session_code) {
 }
 ```
 
-<details><summary> <h3> Handle `Connect` for `SessionManager` </h3> </summary>
+### Handle `Connect` for `SessionManager`
+
+<details><summary>code</summary>
 
 ```
 impl Handler<Connect> for SessionManager {
