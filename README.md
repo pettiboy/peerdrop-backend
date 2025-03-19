@@ -16,7 +16,7 @@ creating migration
 sqlx migrate add create_sessions_table
 ```
 
-then add your migration migration to the `.sql` file
+then add your migration to the `.sql` file
 
 ```zsh
 sqlx migrate run
