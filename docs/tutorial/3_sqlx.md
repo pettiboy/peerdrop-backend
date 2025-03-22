@@ -16,6 +16,7 @@ sqlx migrate add create_users_table
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     code VARCHAR(255) UNIQUE NOT NULL,
+    name VARCHAR(255),
     ecdh_public_key CHAR(64) UNIQUE NOT NULL,
     eddsa_public_key CHAR(64) UNIQUE NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW()
@@ -47,6 +48,7 @@ use sqlx::FromRow;
 pub struct User {
     pub id: i32,                  // primary key
     pub code: String,             // for qr code
+    pub name: Option<String>,     // user's name
     pub ecdh_public_key: String,  // ECDH public key | 64 char hex
     pub eddsa_public_key: String, // EdDSA public key | 64 char hex
 
