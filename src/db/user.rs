@@ -1,4 +1,4 @@
-use crate::models::{session::Session, user::User};
+use crate::models::user::User;
 use sqlx::PgPool;
 
 // todo handle name here?
@@ -23,12 +23,12 @@ pub async fn create_user(
     .await
 }
 
-pub async fn get_session(pool: &PgPool, code: &str) -> Result<Session, sqlx::Error> {
+pub async fn get_user(pool: &PgPool, code: &str) -> Result<User, sqlx::Error> {
     sqlx::query_as!(
-        Session,
+        User,
         r#"
             SELECT * 
-            FROM sessions 
+            FROM users 
             WHERE code = $1
         "#,
         code

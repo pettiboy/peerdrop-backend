@@ -35,8 +35,6 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(pool.clone()))
             .app_data(web::Data::new(chat_server.clone()))
             .app_data(web::Data::new(session_manager.clone()))
-            .service(routes::session::create_session)
-            .service(routes::session::get_session)
             .service(routes::user::create_user)
             .service(routes::user::get_user)
             .service(routes::ws::chat_route)
