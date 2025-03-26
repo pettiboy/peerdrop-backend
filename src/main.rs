@@ -7,6 +7,7 @@ pub mod routes;
 pub mod utils;
 
 use actix::Actor;
+use actix_cors::Cors;
 use actix_web::{web, App, HttpServer};
 use actors::{chat_server::ChatServer, my_actor, session_manager::actor::SessionManager};
 use messages::my_actor::Ping;
@@ -26,12 +27,17 @@ async fn main() -> std::io::Result<()> {
 
     let visitor_count = Arc::new(AtomicUsize::new(0));
     let chat_server = ChatServer::new(visitor_count).start();
-
     let session_manager = SessionManager::new().start();
 
-    // to force the closure to take ownership of `pool` (and any other referenced variables), use the `move` keyword: `move `
     HttpServer::new(move || {
+        let cors = Cors::default()
+            .allow_any_origin()
+            .allow_any_method()
+            .allow_any_header()
+            .max_age(3600);
+
         App::new()
+            .wrap(cors)
             .app_data(web::Data::new(pool.clone()))
             .app_data(web::Data::new(chat_server.clone()))
             .app_data(web::Data::new(session_manager.clone()))
@@ -41,7 +47,7 @@ async fn main() -> std::io::Result<()> {
             .service(routes::ws::chat_create)
             .service(routes::ws::chat_with_code)
     })
-    .bind(("127.0.0.1", 9081))?
+    .bind(("localhost", 9081))?
     .run()
     .await
 }
