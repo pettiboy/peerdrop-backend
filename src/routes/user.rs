@@ -14,12 +14,10 @@ pub struct CreateUserRequest {
 async fn create_user(pool: web::Data<PgPool>, req: web::Json<CreateUserRequest>) -> impl Responder {
     let code = generate_code::generate_code(7);
 
-    println!("{:?}", req.ecdh_public_key);
-
     match user::create_user(&pool, &code, &req.ecdh_public_key, &req.eddsa_public_key).await {
         Ok(user) => HttpResponse::Ok().json(user),
-        Err(_) => HttpResponse::InternalServerError().json(json!({
-            "message": "Something went wrong"
+        Err(err) => HttpResponse::InternalServerError().json(json!({
+            "message": err.to_string(),
         })),
     }
 }

@@ -5,3 +5,5 @@ pub mod ws_chat_session;
 pub mod session;
 pub mod session_manager;
 pub mod shared;
+
+pub mod chat_manager;
