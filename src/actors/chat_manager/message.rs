@@ -7,7 +7,7 @@ use crate::actors::shared::{
     types::{MessageData, MessageType},
 };
 
-use super::actors::Connect;
+use super::actor::Connect;
 
 pub struct ChatManager {
     // key is User.code

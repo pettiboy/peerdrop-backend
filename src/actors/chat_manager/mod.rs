@@ -1,2 +1,2 @@
-pub mod actors;
+pub mod actor;
 pub mod message;
