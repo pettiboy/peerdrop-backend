@@ -7,3 +7,4 @@ pub mod session_manager;
 pub mod shared;
 
 pub mod chat_manager;
+pub mod chat_session;

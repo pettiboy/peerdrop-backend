@@ -9,7 +9,10 @@ pub mod utils;
 use actix::Actor;
 use actix_cors::Cors;
 use actix_web::{web, App, HttpServer};
-use actors::{chat_server::ChatServer, my_actor, session_manager::actor::SessionManager};
+use actors::{
+    chat_manager::message::ChatManager, chat_server::ChatServer, my_actor,
+    session_manager::actor::SessionManager,
+};
 use messages::my_actor::Ping;
 use std::sync::{atomic::AtomicUsize, Arc};
 
@@ -28,6 +31,7 @@ async fn main() -> std::io::Result<()> {
     let visitor_count = Arc::new(AtomicUsize::new(0));
     let chat_server = ChatServer::new(visitor_count).start();
     let session_manager = SessionManager::new().start();
+    let chat_manager = ChatManager::new().start();
 
     HttpServer::new(move || {
         let cors = Cors::default()
@@ -41,11 +45,13 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(pool.clone()))
             .app_data(web::Data::new(chat_server.clone()))
             .app_data(web::Data::new(session_manager.clone()))
+            .app_data(web::Data::new(chat_manager.clone()))
             .service(routes::user::create_user)
             .service(routes::user::get_user)
             .service(routes::ws::chat_route)
             .service(routes::ws::chat_create)
             .service(routes::ws::chat_with_code)
+            .service(routes::ws::ws_chat)
     })
     .bind(("localhost", 9081))?
     .run()

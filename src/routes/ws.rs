@@ -4,7 +4,8 @@ use actix_web_actors::ws;
 use std::time::Instant;
 
 use crate::actors::{
-    chat_server::ChatServer, session::actor::Session, session_manager::actor::SessionManager,
+    chat_manager::message::ChatManager, chat_server::ChatServer, chat_session::actor::ChatSession,
+    session::actor::Session, session_manager::actor::SessionManager,
     ws_chat_session::WsChatSession,
 };
 
@@ -47,11 +48,29 @@ async fn chat_with_code(
     req: HttpRequest,
     stream: web::Payload,
     srv: web::Data<Addr<SessionManager>>,
-    code: web::Path<String>
+    code: web::Path<String>,
 ) -> Result<HttpResponse, Error> {
     let session_actor = Session {
         manager: srv.get_ref().clone(),
         code: Some(code.to_string()),
+    };
+
+    ws::start(session_actor, &req, stream)
+}
+
+#[get("/ws-chat")]
+async fn ws_chat(
+    req: HttpRequest,
+    stream: web::Payload,
+    srv: web::Data<Addr<ChatManager>>,
+) -> Result<HttpResponse, Error> {
+    // Ok(format!("Request Body Bytes:\n{:?}", bytes))
+    println!("{:?}", req);
+
+    let code = "hello";
+    let session_actor = ChatSession {
+        code: code.to_string(),
+        manager: srv.get_ref().clone(),
     };
 
     ws::start(session_actor, &req, stream)
