@@ -16,3 +16,11 @@ pub fn generate_code(length: usize) -> String {
 
     password
 }
+
+pub fn generate_random() -> u64 {
+    let mut rng = rand::rng();
+
+    let random_num: u64 = rng.random();
+
+    return random_num;
+}

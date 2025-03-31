@@ -3,10 +3,13 @@ use actix_web::{get, web, Error, HttpRequest, HttpResponse};
 use actix_web_actors::ws;
 use std::time::Instant;
 
-use crate::actors::{
-    chat_manager::message::ChatManager, chat_server::ChatServer, chat_session::actor::ChatSession,
-    session::actor::Session, session_manager::actor::SessionManager,
-    ws_chat_session::WsChatSession,
+use crate::{
+    actors::{
+        chat_manager::message::ChatManager, chat_server::ChatServer,
+        chat_session::actor::ChatSession, session::actor::Session,
+        session_manager::actor::SessionManager, ws_chat_session::WsChatSession,
+    },
+    utils::generate_code::generate_random,
 };
 
 #[get("/ws")]
@@ -67,10 +70,10 @@ async fn ws_chat(
     // Ok(format!("Request Body Bytes:\n{:?}", bytes))
     println!("{:?}", req);
 
-    let code = "hello";
     let session_actor = ChatSession {
-        code: code.to_string(),
         manager: srv.get_ref().clone(),
+        code: None,
+        session_id: generate_random(),
     };
 
     ws::start(session_actor, &req, stream)

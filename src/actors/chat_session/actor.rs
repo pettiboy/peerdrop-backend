@@ -1,52 +1,32 @@
 use actix::prelude::*;
 use actix_web_actors::ws::{Message, ProtocolError, WebsocketContext};
+use serde_json;
 
 use crate::actors::{
-    chat_manager::{actor::Connect, message::ChatManager},
-    shared::messages::SimpleMessage,
+    chat_manager::{
+        actor::{Authenticate, Connect},
+        message::ChatManager,
+    },
+    shared::{
+        messages::SimpleMessage,
+        types::{MessageType, WebSocketMessage},
+    },
 };
 
 pub struct ChatSession {
     pub manager: Addr<ChatManager>,
-    pub code: String,
+    pub code: Option<String>,
+    pub session_id: u64,
 }
 
 impl Actor for ChatSession {
     type Context = WebsocketContext<Self>;
 
     fn started(&mut self, ctx: &mut Self::Context) {
-        // so when the Session actor is started - we inform the SessionManager
-        // if new   - creates a code and sends it back
-        // else     - relays existing code
-        // this logic is handled inside the Connect handler
-
-        // Addr<SessionManager> is actually a lightweight handle
-        //  (similar to a reference) to the actor, not the actor itself...
-        // when we call clone() on it, we're just creating another handle that
-        //  points to the same underlying SessionManager actor
-        let manager = self.manager.to_owned();
-
-        let code = self.code.to_owned();
-
-        manager
-            // the connect message send back a code
-            // to this Session Actor
-            .send(Connect {
-                // for `.recipient()` to work here we have to write a handler for `SimpleMessage`
-                sender_address: ctx
-                    .address() // gets THIS actor's address (Session actor in this case)
-                    .recipient(), // creates a way for OTHER actors to send messages TO this actor
-                user_code: code,
-            })
-            .into_actor(self)
-            .then(|res, _act, _ctx| {
-                match res {
-                    Ok(_) => println!("all good"),
-                    _ => println!("Something went wrong"),
-                }
-                fut::ready(())
-            })
-            .wait(ctx);
+        self.manager.do_send(Connect {
+            session_id: self.session_id,
+            sender_address: ctx.address().recipient(),
+        });
     }
 }
 
@@ -63,11 +43,24 @@ impl StreamHandler<Result<Message, ProtocolError>> for ChatSession {
         match msg {
             Message::Text(text) => {
                 println!("{:?}", text);
-                // self.manager.do_send(Relay {
-                //     session_code: self.code.clone().unwrap_or("".to_string()),
-                //     from: ctx.address().recipient(),
-                //     msg: text.to_string(),
-                // });
+                match serde_json::from_str::<WebSocketMessage>(&text) {
+                    Ok(ws_message) => match ws_message.data.message {
+                        MessageType::Connect => {
+                            println!("hello");
+                            self.manager.do_send(Authenticate {
+                                session_id: self.session_id,
+                                user_code: "hello".to_owned(),
+                            });
+                        }
+                        _ => {}
+                    },
+                    Err(e) => {
+                        println!("invalid message {:?}", e);
+                        ctx.address()
+                            .recipient()
+                            .do_send(SimpleMessage("invalid_message_sent".to_owned()));
+                    }
+                }
             }
             Message::Binary(_) => println!("Unexpected binary"),
             Message::Close(reason) => {
