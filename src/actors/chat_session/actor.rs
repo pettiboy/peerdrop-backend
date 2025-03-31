@@ -9,7 +9,7 @@ use crate::actors::{
     },
     shared::{
         messages::SimpleMessage,
-        types::{MessageType, WebSocketMessage},
+        types::{MessageType, ResponseMessages, WebSocketMessage},
     },
 };
 
@@ -46,7 +46,6 @@ impl StreamHandler<Result<Message, ProtocolError>> for ChatSession {
                 match serde_json::from_str::<WebSocketMessage>(&text) {
                     Ok(ws_message) => match ws_message.data.message {
                         MessageType::Connect => {
-                            println!("hello");
                             self.manager.do_send(Authenticate {
                                 session_id: self.session_id,
                                 user_code: "hello".to_owned(),
@@ -54,11 +53,10 @@ impl StreamHandler<Result<Message, ProtocolError>> for ChatSession {
                         }
                         _ => {}
                     },
-                    Err(e) => {
-                        println!("invalid message {:?}", e);
-                        ctx.address()
-                            .recipient()
-                            .do_send(SimpleMessage("invalid_message_sent".to_owned()));
+                    Err(_) => {
+                        ctx.address().recipient().do_send(SimpleMessage(
+                            serde_json::to_string(&ResponseMessages::InvalidMessage).unwrap(),
+                        ));
                     }
                 }
             }

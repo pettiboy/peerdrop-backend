@@ -4,7 +4,7 @@ use actix::prelude::*;
 
 use crate::actors::shared::{
     messages::SimpleMessage,
-    types::{MessageData, MessageType},
+    types::{MessageData, MessageType, ResponseMessages},
 };
 
 use super::actor::{Authenticate, Connect};
@@ -47,8 +47,9 @@ impl Handler<Connect> for ChatManager {
 
         // let response_string = serde_json::to_string(&response).unwrap();
 
-        msg.sender_address
-            .do_send(SimpleMessage("send_authenticate".to_string()));
+        msg.sender_address.do_send(SimpleMessage(
+            serde_json::to_string(&ResponseMessages::SendAuthenticate).unwrap(),
+        ));
     }
 }
 
