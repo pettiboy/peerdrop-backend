@@ -1,22 +1,72 @@
 use actix::prelude::*;
 use actix_web_actors::ws::{Message, ProtocolError, WebsocketContext};
 use serde_json;
+use sqlx::PgPool;
 
-use crate::actors::{
-    chat_manager::{
-        actor::{Authenticate, Connect},
-        message::ChatManager,
+use crate::{
+    actors::{
+        chat_manager::{
+            actor::{Authenticate, Connect},
+            message::ChatManager,
+        },
+        shared::{
+            messages::SimpleMessage,
+            types::{MessageType, ResponseMessages, WebSocketMessage},
+        },
     },
-    shared::{
-        messages::SimpleMessage,
-        types::{MessageType, ResponseMessages, WebSocketMessage},
-    },
+    db,
+    utils::eddsa::eddsa_verify_signature,
 };
 
 pub struct ChatSession {
     pub manager: Addr<ChatManager>,
     pub code: Option<String>,
     pub session_id: u64,
+    pub db_pool: PgPool,
+}
+
+impl ChatSession {
+    fn handle_authenticate(&self, ws_message: WebSocketMessage, ctx: &mut WebsocketContext<Self>) {
+        let manager = self.manager.clone();
+        let pool = self.db_pool.clone();
+        let session_id = self.session_id;
+        let addr = ctx.address();
+
+        let user_code_claimed = ws_message.data.sender.clone();
+        let given_signature = ws_message.signature;
+        let given_data = serde_jcs::to_string(&ws_message.data).expect("invalid message given");
+        println!("{:?}", given_data);
+
+        // using actors context to handle the future (db operation)
+        async move {
+            match db::user::get_user(&pool, &user_code_claimed).await {
+                Ok(user) => {
+                    let public_key_from_db = &user.eddsa_public_key;
+
+                    let is_valid_signature =
+                        eddsa_verify_signature(&given_data, &given_signature, public_key_from_db);
+
+                    if !is_valid_signature {
+                        addr.do_send(SimpleMessage(
+                            serde_jcs::to_string(&ResponseMessages::InvalidSignature).unwrap(),
+                        ));
+                    } else {
+                        manager.do_send(Authenticate {
+                            session_id,
+                            user_code: user.code,
+                        });
+                    }
+                }
+                Err(_) => {
+                    addr.do_send(SimpleMessage(
+                        serde_json::to_string(&ResponseMessages::InvalidSender).unwrap(),
+                    ));
+                }
+            }
+        }
+        .into_actor(self)
+        .wait(ctx);
+    }
 }
 
 impl Actor for ChatSession {
@@ -46,10 +96,8 @@ impl StreamHandler<Result<Message, ProtocolError>> for ChatSession {
                 match serde_json::from_str::<WebSocketMessage>(&text) {
                     Ok(ws_message) => match ws_message.data.message {
                         MessageType::Connect => {
-                            self.manager.do_send(Authenticate {
-                                session_id: self.session_id,
-                                user_code: "hello".to_owned(),
-                            });
+                            println!("connecting..");
+                            self.handle_authenticate(ws_message, ctx)
                         }
                         _ => {}
                     },

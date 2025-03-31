@@ -1,6 +1,7 @@
 use actix::Addr;
 use actix_web::{get, web, Error, HttpRequest, HttpResponse};
 use actix_web_actors::ws;
+use sqlx::PgPool;
 use std::time::Instant;
 
 use crate::{
@@ -66,6 +67,7 @@ async fn ws_chat(
     req: HttpRequest,
     stream: web::Payload,
     srv: web::Data<Addr<ChatManager>>,
+    pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, Error> {
     // Ok(format!("Request Body Bytes:\n{:?}", bytes))
     println!("{:?}", req);
@@ -74,6 +76,7 @@ async fn ws_chat(
         manager: srv.get_ref().clone(),
         code: None,
         session_id: generate_random(),
+        db_pool: pool.get_ref().clone(), // smart pointer doesnt actually create new connection
     };
 
     ws::start(session_actor, &req, stream)

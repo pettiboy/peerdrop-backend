@@ -9,6 +9,7 @@ pub struct WebSocketMessage {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MessageData {
     pub sender: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub recipient: Option<String>,
     pub message: MessageType,
 }
@@ -27,4 +28,6 @@ pub enum MessageType {
 pub enum ResponseMessages {
     SendAuthenticate,
     InvalidMessage,
+    InvalidSignature,
+    InvalidSender,
 }

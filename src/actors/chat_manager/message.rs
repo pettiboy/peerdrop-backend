@@ -74,6 +74,7 @@ impl Handler<Authenticate> for ChatManager {
             .remove(&msg.session_id)
             .expect("unable to remove session id from pending users");
 
+        // respond with connect_ack message
         let response = MessageData {
             sender: "server".to_string(),
             recipient: Some(msg.user_code.to_owned()),

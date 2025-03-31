@@ -30,3 +30,7 @@ actix-web-actors = "4.1"
 
 # https://docs.rs/actix-cors/latest/actix_cors/struct.Cors.html#example
 actix-cors = "0.7.1"
+
+ed25519-dalek = { version = "2.1.1", features = ["rand_core"] }
+hex = "0.4.3"
+serde_jcs = "0.1.0"
