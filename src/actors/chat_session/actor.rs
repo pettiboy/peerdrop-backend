@@ -6,7 +6,7 @@ use sqlx::PgPool;
 use crate::{
     actors::{
         chat_manager::{
-            actor::{Authenticate, Connect},
+            actor::{Authenticate, Connect, KeyExchange},
             message::ChatManager,
         },
         shared::{
@@ -67,6 +67,12 @@ impl ChatSession {
         .into_actor(self)
         .wait(ctx);
     }
+
+    fn handle_key_exchange(&self, ws_message: WebSocketMessage, _ctx: &mut WebsocketContext<Self>) {
+        self.manager.do_send(KeyExchange {
+            data: ws_message.data,
+        });
+    }
 }
 
 impl Actor for ChatSession {
@@ -98,6 +104,9 @@ impl StreamHandler<Result<Message, ProtocolError>> for ChatSession {
                         MessageType::Connect => {
                             println!("connecting..");
                             self.handle_authenticate(ws_message, ctx)
+                        }
+                        MessageType::KeyExchange { .. } => {
+                            self.handle_key_exchange(ws_message, ctx)
                         }
                         _ => {}
                     },

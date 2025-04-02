@@ -7,7 +7,7 @@ use crate::actors::shared::{
     types::{MessageData, MessageType, ResponseMessages},
 };
 
-use super::actor::{Authenticate, Connect};
+use super::actor::{Authenticate, Connect, KeyExchange};
 
 pub struct ChatManager {
     // key is User.code
@@ -57,6 +57,8 @@ impl Handler<Authenticate> for ChatManager {
     type Result = ();
 
     fn handle(&mut self, msg: Authenticate, _ctx: &mut Self::Context) -> Self::Result {
+        println!("Hello from authenticate in session manager");
+
         // get recipient from session id mapping
         // and clone it so we can keep it in scope after removing this reference
         let recipient = self
@@ -79,6 +81,45 @@ impl Handler<Authenticate> for ChatManager {
             sender: "server".to_string(),
             recipient: Some(msg.user_code.to_owned()),
             message: MessageType::ConnectAck,
+        };
+
+        let response_string = serde_json::to_string(&response).unwrap();
+
+        println!("response string {:?}", response_string);
+
+        recipient.do_send(SimpleMessage(response_string));
+    }
+}
+
+impl Handler<KeyExchange> for ChatManager {
+    type Result = ();
+
+    fn handle(&mut self, msg: KeyExchange, _ctx: &mut Self::Context) -> Self::Result {
+        let sender_code = msg.data.sender;
+        let recipient_code = match msg.data.recipient {
+            Some(receipent) => receipent,
+            None => {
+                println!("recipient_code not found");
+                return;
+            }
+        };
+
+        // get recipient if online
+        let recipient = match self.connected_users.get(&recipient_code) {
+            Some(recipient) => recipient,
+            None => {
+                println!("Recipient not online");
+                return;
+            }
+        };
+
+        // respond with connect_ack message
+        let response = MessageData {
+            sender: sender_code,
+            recipient: Some(recipient_code),
+            message: MessageType::KeyExchange {
+                ecdh_public_key: "".to_string(),
+            },
         };
 
         let response_string = serde_json::to_string(&response).unwrap();
